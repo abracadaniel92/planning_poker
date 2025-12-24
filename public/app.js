@@ -1,0 +1,141 @@
+let userId = null;
+let nickname = null;
+let currentVote = null;
+let pollInterval = null;
+
+// Host login form
+document.getElementById('host-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('host-password-input').value;
+    const errorDiv = document.getElementById('host-login-error');
+
+    try {
+        const response = await fetch('/api/host/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            sessionStorage.setItem('hostAuthenticated', 'true');
+            window.location.href = 'host.html';
+        } else {
+            errorDiv.textContent = data.error || 'Invalid password';
+            errorDiv.classList.remove('hidden');
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Connection error. Please try again.';
+        errorDiv.classList.remove('hidden');
+    }
+});
+
+// Join session
+document.getElementById('join-btn').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        userId = data.userId;
+        nickname = data.nickname;
+        
+        document.getElementById('join-screen').classList.add('hidden');
+        document.getElementById('voting-screen').classList.remove('hidden');
+        document.getElementById('nickname-display').textContent = nickname;
+        
+        // Start polling
+        startPolling();
+    } catch (error) {
+        console.error('Failed to join:', error);
+        alert('Failed to join session. Please refresh and try again.');
+    }
+});
+
+// Card selection
+document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', async () => {
+        if (!userId) return;
+        
+        const vote = card.dataset.vote;
+        
+        // Update UI
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        currentVote = vote;
+        
+        // Update vote display
+        document.getElementById('vote-display').textContent = `You voted: ${vote}`;
+        
+        // Submit vote
+        try {
+            await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, vote })
+            });
+        } catch (error) {
+            console.error('Failed to submit vote:', error);
+        }
+    });
+});
+
+// Polling function
+function startPolling() {
+    pollInterval = setInterval(async () => {
+        try {
+            // Get session status
+            const sessionResponse = await fetch('/api/session');
+            const sessionData = await sessionResponse.json();
+            
+            const status = sessionData.status;
+            const statusMessage = document.getElementById('status-message');
+            const votingArea = document.getElementById('voting-area');
+            const resultsScreen = document.getElementById('results-screen');
+            
+            if (status === 'waiting') {
+                statusMessage.textContent = 'Waiting for voting to start...';
+                votingArea.classList.add('hidden');
+                resultsScreen.classList.add('hidden');
+            } else if (status === 'voting') {
+                statusMessage.textContent = 'Voting in progress...';
+                votingArea.classList.remove('hidden');
+                resultsScreen.classList.add('hidden');
+            } else if (status === 'ended') {
+                statusMessage.textContent = 'Voting ended';
+                votingArea.classList.add('hidden');
+                resultsScreen.classList.remove('hidden');
+                
+                // Get results
+                const votesResponse = await fetch('/api/votes');
+                const votesData = await votesResponse.json();
+                displayResults(votesData.votes);
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, 2000); // Poll every 2 seconds
+}
+
+function displayResults(votes) {
+    const resultsList = document.getElementById('results-list');
+    resultsList.innerHTML = '';
+    
+    if (votes.length === 0) {
+        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
+        return;
+    }
+    
+    votes.forEach(vote => {
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.innerHTML = `
+            <span class="result-nickname">${vote.nickname}</span>
+            <span class="result-vote">${vote.current_vote}</span>
+        `;
+        resultsList.appendChild(item);
+    });
+}
+

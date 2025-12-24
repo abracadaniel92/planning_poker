@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div id="join-screen" class="screen">
+            <h1>Planning Poker</h1>
+            <div class="join-options">
+                <div class="join-section">
+                    <button id="join-btn" class="btn btn-primary">Join Session</button>
+                </div>
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+                <div class="host-login-section">
+                    <h3 style="margin-bottom: 15px; font-size: 1.2em;">Host Login</h3>
+                    <form id="host-login-form">
+                        <input type="password" id="host-password-input" placeholder="Enter host password" required>
+                        <button type="submit" class="btn btn-secondary" style="margin-top: 10px;">Login as Host</button>
+                    </form>
+                    <div id="host-login-error" class="error-message hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="voting-screen" class="screen hidden">
+            <div class="header">
+                <h2 id="nickname-display"></h2>
+                <div id="status-message" class="status-message">Waiting for voting to start...</div>
+            </div>
+
+            <div id="voting-area" class="voting-area hidden">
+                <div id="vote-display" class="vote-display"></div>
+                <div class="cards-container">
+                    <button class="card" data-vote="0">0</button>
+                    <button class="card" data-vote="1">1</button>
+                    <button class="card" data-vote="2">2</button>
+                    <button class="card" data-vote="3">3</button>
+                    <button class="card" data-vote="5">5</button>
+                    <button class="card" data-vote="8">8</button>
+                    <button class="card" data-vote="13">13</button>
+                    <button class="card" data-vote="21">21</button>
+                    <button class="card" data-vote="34">34</button>
+                    <button class="card" data-vote="55">55</button>
+                    <button class="card" data-vote="89">89</button>
+                    <button class="card" data-vote="?">?</button>
+                </div>
+            </div>
+
+            <div id="results-screen" class="results-screen hidden">
+                <h3>Voting Results</h3>
+                <div id="results-list" class="results-list"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
+

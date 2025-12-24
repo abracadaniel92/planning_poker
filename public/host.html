@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Control - Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="host-screen">
+            <h1>Host Control Panel</h1>
+            
+            <div class="status-section">
+                <div id="session-status" class="status-badge">Waiting</div>
+            </div>
+
+            <div class="controls-section">
+                <button id="start-btn" class="btn btn-success">Start Voting</button>
+                <button id="end-btn" class="btn btn-danger hidden">End Voting</button>
+                <button id="reset-btn" class="btn btn-secondary hidden">Reset for Next Story</button>
+            </div>
+
+            <div id="results-section" class="results-section hidden">
+                <h3>Voting Results</h3>
+                <div id="host-results-list" class="results-list"></div>
+            </div>
+        </div>
+    </div>
+    <script src="host.js"></script>
+</body>
+</html>
+

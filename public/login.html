@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Login - Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-screen">
+            <h1>Host Login</h1>
+            <form id="login-form">
+                <input type="password" id="password-input" placeholder="Enter host password" required>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <div id="login-error" class="error-message hidden"></div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password-input').value;
+            const errorDiv = document.getElementById('login-error');
+
+            try {
+                const response = await fetch('/api/host/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    sessionStorage.setItem('hostAuthenticated', 'true');
+                    window.location.href = 'host.html';
+                } else {
+                    errorDiv.textContent = data.error || 'Invalid password';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+
