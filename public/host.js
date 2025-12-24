@@ -54,15 +54,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const response = await fetch('/api/host/clear-users', { method: 'POST' });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || 'Failed to clear users');
+            }
+            
             const data = await response.json();
             if (data.success) {
                 const count = data.clearedCount || 0;
                 alert(`Successfully cleared ${count} user(s)`);
                 updateUI();
+            } else {
+                alert('Failed to clear users. Please try again.');
             }
         } catch (error) {
             console.error('Failed to clear users:', error);
-            alert('Failed to clear users. Please try again.');
+            alert('Failed to clear users: ' + (error.message || 'Please try again.'));
         }
     });
 
