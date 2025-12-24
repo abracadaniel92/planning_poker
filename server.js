@@ -10,7 +10,16 @@ const HOST_PASSWORD = process.env.HOST_PASSWORD || 'admin123';
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// Disable caching for HTML/JS/CSS files to prevent cache issues
+app.use(express.static('public', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Initialize database
 const db = new sqlite3.Database('./poker.db');
