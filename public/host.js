@@ -170,24 +170,33 @@ function displayVoteDistribution(voteDistribution) {
     }
     
     const maxCount = Math.max(...Object.values(voteDistribution));
+    const chartHeight = 200; // Fixed chart height in pixels
+    
     const chartContainer = document.createElement('div');
     chartContainer.className = 'vote-distribution-chart';
     
     votes.forEach(vote => {
         const count = voteDistribution[vote];
-        const percentage = (count / maxCount) * 100;
+        const barHeight = maxCount > 0 ? (count / maxCount) * chartHeight : 0;
         
         const item = document.createElement('div');
         item.className = 'vote-distribution-item';
-        item.innerHTML = `
-            <div class="vote-label-row">
-                <span class="vote-label">${vote}</span>
-                <span class="vote-count">${count}</span>
-            </div>
-            <div class="vote-bar-container">
-                <div class="vote-bar" style="width: ${percentage}%">${count}</div>
-            </div>
-        `;
+        
+        const barContainer = document.createElement('div');
+        barContainer.className = 'vote-bar-container';
+        
+        const bar = document.createElement('div');
+        bar.className = 'vote-bar';
+        bar.style.height = `${barHeight}px`;
+        bar.setAttribute('data-count', count);
+        
+        const label = document.createElement('div');
+        label.className = 'vote-label';
+        label.textContent = vote === '?' ? '?' : `${vote} Points`;
+        
+        barContainer.appendChild(bar);
+        item.appendChild(barContainer);
+        item.appendChild(label);
         chartContainer.appendChild(item);
     });
     
