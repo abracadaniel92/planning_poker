@@ -18,42 +18,30 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            ConnectionStatus.init();
-            document.getElementById('login-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const password = document.getElementById('password-input').value;
-                const errorDiv = document.getElementById('login-error');
-                LoadingState.show('login-form', 'Logging in...');
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password-input').value;
+            const errorDiv = document.getElementById('login-error');
 
-                try {
-                    const response = await apiRequest('/api/host/login', {
-                        method: 'POST',
-                        body: JSON.stringify({ password })
-                    });
+            try {
+                const response = await fetch('/api/host/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
 
-                    const data = await response.json();
-                    if (response.ok) {
-                        sessionStorage.setItem('hostSessionId', data.sessionId);
-                        sessionStorage.setItem('hostAuthenticated', 'true');
-                        Toast.success('Login successful');
-                        setTimeout(() => {
-                            window.location.href = 'host.html';
-                        }, 500);
-                    } else {
-                        errorDiv.textContent = data.error || 'Invalid password';
-                        errorDiv.classList.remove('hidden');
-                        Toast.error(data.error || 'Invalid password');
-                    }
-                } catch (error) {
-                    const errorMsg = 'Connection error. Please try again.';
-                    errorDiv.textContent = errorMsg;
+                const data = await response.json();
+                if (response.ok) {
+                    sessionStorage.setItem('hostAuthenticated', 'true');
+                    window.location.href = 'host.html';
+                } else {
+                    errorDiv.textContent = data.error || 'Invalid password';
                     errorDiv.classList.remove('hidden');
-                    Toast.error(errorMsg);
-                } finally {
-                    LoadingState.hide('login-form');
                 }
-            });
+            } catch (error) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
         });
     </script>
 </body>

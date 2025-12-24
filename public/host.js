@@ -73,26 +73,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            // Try to clear users, but logout even if it fails
             try {
-                // Clear users first
                 const clearResponse = await fetch('/api/host/clear-users', { method: 'POST' });
-                
-                if (!clearResponse.ok) {
-                    const errorData = await clearResponse.json().catch(() => ({ error: 'Unknown error' }));
-                    throw new Error(errorData.error || 'Failed to clear users');
+                if (clearResponse.ok) {
+                    const clearData = await clearResponse.json();
+                    console.log(`Cleared ${clearData.clearedCount || 0} user(s) before logout`);
                 }
-                
-                const clearData = await clearResponse.json();
-                
-                // Logout
-                sessionStorage.removeItem('hostAuthenticated');
-                
-                // Redirect immediately (don't wait for alert)
-                window.location.href = 'login.html';
             } catch (error) {
-                console.error('Failed to logout:', error);
-                alert('Failed to logout: ' + (error.message || 'Please try again.'));
+                console.error('Failed to clear users on logout (continuing anyway):', error);
             }
+            
+            // Always logout and redirect, even if clearing users failed
+            sessionStorage.removeItem('hostAuthenticated');
+            window.location.href = 'login.html';
         });
     }
 
