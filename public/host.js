@@ -5,84 +5,95 @@ if (!sessionStorage.getItem('hostAuthenticated')) {
 
 let pollInterval = null;
 
-// Control buttons
-document.getElementById('start-btn').addEventListener('click', async () => {
-    try {
-        const response = await fetch('/api/host/start', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-            updateUI();
+// Wait for DOM to be ready before attaching event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Control buttons
+    document.getElementById('start-btn').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/host/start', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                updateUI();
+            }
+        } catch (error) {
+            console.error('Failed to start voting:', error);
+            alert('Failed to start voting. Please try again.');
         }
-    } catch (error) {
-        console.error('Failed to start voting:', error);
-        alert('Failed to start voting. Please try again.');
-    }
-});
+    });
 
-document.getElementById('end-btn').addEventListener('click', async () => {
-    try {
-        const response = await fetch('/api/host/end', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-            updateUI();
+    document.getElementById('end-btn').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/host/end', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                updateUI();
+            }
+        } catch (error) {
+            console.error('Failed to end voting:', error);
+            alert('Failed to end voting. Please try again.');
         }
-    } catch (error) {
-        console.error('Failed to end voting:', error);
-        alert('Failed to end voting. Please try again.');
-    }
-});
+    });
 
-document.getElementById('reset-btn').addEventListener('click', async () => {
-    try {
-        const response = await fetch('/api/host/reset', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-            updateUI();
+    document.getElementById('reset-btn').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/host/reset', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                updateUI();
+            }
+        } catch (error) {
+            console.error('Failed to reset:', error);
+            alert('Failed to reset. Please try again.');
         }
-    } catch (error) {
-        console.error('Failed to reset:', error);
-        alert('Failed to reset. Please try again.');
-    }
-});
+    });
 
-document.getElementById('clear-users-btn').addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to clear all users? This will remove everyone from the session.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/host/clear-users', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-            const count = data.clearedCount || 0;
-            alert(`Successfully cleared ${count} user(s)`);
-            updateUI();
+    document.getElementById('clear-users-btn').addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to clear all users? This will remove everyone from the session.')) {
+            return;
         }
-    } catch (error) {
-        console.error('Failed to clear users:', error);
-        alert('Failed to clear users. Please try again.');
-    }
-});
-
-document.getElementById('logout-btn').addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to logout? This will also clear all users.')) {
-        return;
-    }
-    
-    try {
-        // Clear users first
-        const clearResponse = await fetch('/api/host/clear-users', { method: 'POST' });
-        const clearData = await clearResponse.json();
         
-        // Logout
-        sessionStorage.removeItem('hostAuthenticated');
-        const clearedCount = clearData.clearedCount || 0;
-        alert(`Logged out successfully. Cleared ${clearedCount} user(s).`);
-        window.location.href = 'login.html';
-    } catch (error) {
-        console.error('Failed to logout:', error);
-        alert('Failed to logout. Please try again.');
+        try {
+            const response = await fetch('/api/host/clear-users', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                const count = data.clearedCount || 0;
+                alert(`Successfully cleared ${count} user(s)`);
+                updateUI();
+            }
+        } catch (error) {
+            console.error('Failed to clear users:', error);
+            alert('Failed to clear users. Please try again.');
+        }
+    });
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to logout? This will also clear all users.')) {
+                return;
+            }
+            
+            try {
+                // Clear users first
+                const clearResponse = await fetch('/api/host/clear-users', { method: 'POST' });
+                const clearData = await clearResponse.json();
+                
+                // Logout
+                sessionStorage.removeItem('hostAuthenticated');
+                const clearedCount = clearData.clearedCount || 0;
+                
+                // Redirect immediately
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Failed to logout:', error);
+                alert('Failed to logout. Please try again.');
+            }
+        });
     }
+
+    // Start polling for status updates
+    pollInterval = setInterval(updateUI, 2000);
+    updateUI(); // Initial update
 });
 
 // Update UI based on session status
@@ -136,6 +147,8 @@ function updateUI() {
 
 function displayVoteDistribution(voteDistribution) {
     const resultsList = document.getElementById('host-results-list');
+    if (!resultsList) return;
+    
     resultsList.innerHTML = '';
     
     const votes = Object.keys(voteDistribution).sort((a, b) => {
@@ -205,7 +218,3 @@ function displayAllUsers(users, sessionStatus) {
         usersList.appendChild(badge);
     });
 }
-
-// Start polling for status updates
-pollInterval = setInterval(updateUI, 2000);
-updateUI(); // Initial update

@@ -108,14 +108,10 @@ function startPolling() {
                 votingArea.classList.remove('hidden');
                 resultsScreen.classList.add('hidden');
             } else if (status === 'ended') {
-                statusMessage.textContent = 'Voting ended';
+                statusMessage.textContent = 'Voting ended - Waiting for next story...';
                 votingArea.classList.add('hidden');
-                resultsScreen.classList.remove('hidden');
-                
-                // Get results
-                const votesResponse = await fetch('/api/votes');
-                const votesData = await votesResponse.json();
-                displayResults(votesData.votes);
+                resultsScreen.classList.add('hidden');
+                // Users don't see results - only host sees the bar chart
             }
             
             // Update users list and vote count
@@ -176,27 +172,5 @@ function displayUsers(users) {
             badge.title = 'Has voted';
         }
         usersList.appendChild(badge);
-    });
-}
-
-function displayResults(votes) {
-    const resultsList = document.getElementById('results-list');
-    if (!resultsList) return;
-    
-    resultsList.innerHTML = '';
-    
-    if (votes.length === 0) {
-        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
-        return;
-    }
-    
-    votes.forEach(vote => {
-        const item = document.createElement('div');
-        item.className = 'result-item';
-        item.innerHTML = `
-            <span class="result-nickname">${vote.nickname}</span>
-            <span class="result-vote">${vote.current_vote}</span>
-        `;
-        resultsList.appendChild(item);
     });
 }
