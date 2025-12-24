@@ -84,6 +84,9 @@ document.querySelectorAll('.card').forEach(card => {
 
 // Polling function
 function startPolling() {
+    // Update users immediately
+    updateUsersList();
+    
     pollInterval = setInterval(async () => {
         try {
             // Get session status
@@ -113,10 +116,42 @@ function startPolling() {
                 const votesData = await votesResponse.json();
                 displayResults(votesData.votes);
             }
+            
+            // Update users list
+            updateUsersList();
         } catch (error) {
             console.error('Polling error:', error);
         }
     }, 2000); // Poll every 2 seconds
+}
+
+// Update users list
+async function updateUsersList() {
+    try {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        displayUsers(data.users);
+    } catch (error) {
+        console.error('Failed to get users:', error);
+    }
+}
+
+// Display users
+function displayUsers(users) {
+    const usersList = document.getElementById('users-list');
+    usersList.innerHTML = '';
+    
+    if (users.length === 0) {
+        usersList.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">No users joined yet</p>';
+        return;
+    }
+    
+    users.forEach(nickname => {
+        const badge = document.createElement('div');
+        badge.className = 'user-badge';
+        badge.textContent = nickname;
+        usersList.appendChild(badge);
+    });
 }
 
 function displayResults(votes) {

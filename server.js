@@ -78,6 +78,16 @@ app.get('/api/session', (req, res) => {
   });
 });
 
+// API: Get all joined users
+app.get('/api/users', (req, res) => {
+  db.all("SELECT nickname FROM users ORDER BY created_at ASC", (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to get users' });
+    }
+    res.json({ users: rows.map(row => row.nickname) });
+  });
+});
+
 // API: Submit vote
 app.post('/api/vote', (req, res) => {
   const { userId, vote } = req.body;
