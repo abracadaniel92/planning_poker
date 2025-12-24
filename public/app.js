@@ -1,56 +1,103 @@
+// Utilities are loaded via script tag before this file
+
 let userId = null;
 let nickname = null;
 let currentVote = null;
-let pollInterval = null;
+let lastSessionStatus = null;
+let lastVoteCount = { total: 0, voted: 0 };
+
+// Initialize connection status
+ConnectionStatus.init();
 
 // Host login form
 document.getElementById('host-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const password = document.getElementById('host-password-input').value;
     const errorDiv = document.getElementById('host-login-error');
+    LoadingState.show('host-login-form', 'Logging in...');
 
     try {
-        const response = await fetch('/api/host/login', {
+        const response = await apiRequest('/api/host/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password })
         });
 
         const data = await response.json();
         if (response.ok) {
+            sessionStorage.setItem('hostSessionId', data.sessionId);
             sessionStorage.setItem('hostAuthenticated', 'true');
-            window.location.href = 'host.html';
+            Toast.success('Login successful');
+            setTimeout(() => {
+                window.location.href = 'host.html';
+            }, 500);
         } else {
             errorDiv.textContent = data.error || 'Invalid password';
             errorDiv.classList.remove('hidden');
+            Toast.error(data.error || 'Invalid password');
         }
     } catch (error) {
-        errorDiv.textContent = 'Connection error. Please try again.';
+        const errorMsg = 'Connection error. Please try again.';
+        errorDiv.textContent = errorMsg;
         errorDiv.classList.remove('hidden');
+        Toast.error(errorMsg);
+    } finally {
+        LoadingState.hide('host-login-form');
     }
 });
 
 // Join session
 document.getElementById('join-btn').addEventListener('click', async () => {
+    LoadingState.show('join-btn', 'Joining...');
+    
     try {
-        const response = await fetch('/api/join', {
+        // Check if user already exists
+        const existingUserId = sessionStorage.getItem('userId');
+        const response = await apiRequest('/api/join', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            body: JSON.stringify(existingUserId ? { userId: existingUserId } : {})
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to join session');
+        }
+
         const data = await response.json();
         
         userId = data.userId;
         nickname = data.nickname;
+        sessionStorage.setItem('userId', userId);
         
         document.getElementById('join-screen').classList.add('hidden');
         document.getElementById('voting-screen').classList.remove('hidden');
         document.getElementById('nickname-display').textContent = nickname;
         
+        Toast.success(`Joined as ${nickname}`);
+        
         // Start polling
         startPolling();
     } catch (error) {
         console.error('Failed to join:', error);
-        alert('Failed to join session. Please refresh and try again.');
+        Toast.error(error.message || 'Failed to join session. Please try again.');
+    } finally {
+        LoadingState.hide('join-btn');
+    }
+});
+
+// Restore user session if exists
+window.addEventListener('DOMContentLoaded', () => {
+    const savedUserId = sessionStorage.getItem('userId');
+    if (savedUserId) {
+        userId = savedUserId;
+        // Optionally try to rejoin or show a message
+    }
+});
+
+// Handle page unload - leave session
+window.addEventListener('beforeunload', () => {
+    if (userId) {
+        // Use sendBeacon for reliable delivery
+        navigator.sendBeacon('/api/leave', JSON.stringify({ userId }));
     }
 });
 
@@ -61,7 +108,7 @@ document.querySelectorAll('.card').forEach(card => {
         
         const vote = card.dataset.vote;
         
-        // Update UI
+        // Update UI immediately
         document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         currentVote = vote;
@@ -70,33 +117,55 @@ document.querySelectorAll('.card').forEach(card => {
         document.getElementById('vote-display').textContent = `You voted: ${vote}`;
         
         // Submit vote
+        LoadingState.show('vote-display', 'Submitting...');
         try {
-            await fetch('/api/vote', {
+            const response = await apiRequest('/api/vote', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, vote })
             });
+            
+            if (response.ok) {
+                Toast.success('Vote submitted');
+            } else {
+                const errorData = await response.json();
+                Toast.error(errorData.error || 'Failed to submit vote');
+            }
         } catch (error) {
-            console.error('Failed to submit vote:', error);
+            Toast.error('Failed to submit vote. Please try again.');
+        } finally {
+            LoadingState.hide('vote-display');
         }
     });
 });
 
-// Polling function
+// Polling function with adaptive frequency
 function startPolling() {
-    // Update users immediately
+    // Update users and vote count immediately
     updateUsersList();
+    updateVoteCount();
     
-    pollInterval = setInterval(async () => {
+    PollingManager.start(async () => {
         try {
             // Get session status
-            const sessionResponse = await fetch('/api/session');
+            const sessionResponse = await apiRequest('/api/session');
             const sessionData = await sessionResponse.json();
             
             const status = sessionData.status;
             const statusMessage = document.getElementById('status-message');
             const votingArea = document.getElementById('voting-area');
             const resultsScreen = document.getElementById('results-screen');
+            
+            // Check for status changes and show notifications
+            if (lastSessionStatus && lastSessionStatus !== status) {
+                if (status === 'voting') {
+                    Toast.info('Voting has started!');
+                } else if (status === 'ended') {
+                    Toast.success('Voting has ended');
+                } else if (status === 'waiting') {
+                    Toast.info('Session reset');
+                }
+            }
+            lastSessionStatus = status;
             
             if (status === 'waiting') {
                 statusMessage.textContent = 'Waiting for voting to start...';
@@ -112,54 +181,81 @@ function startPolling() {
                 resultsScreen.classList.remove('hidden');
                 
                 // Get results
-                const votesResponse = await fetch('/api/votes');
+                const votesResponse = await apiRequest('/api/votes');
                 const votesData = await votesResponse.json();
                 displayResults(votesData.votes);
             }
             
-            // Update users list
+            // Update users list and vote count
             updateUsersList();
+            updateVoteCount();
         } catch (error) {
             console.error('Polling error:', error);
         }
-    }, 2000); // Poll every 2 seconds
+    });
 }
 
 // Update users list
 async function updateUsersList() {
     try {
-        const response = await fetch('/api/users');
+        const response = await apiRequest('/api/users');
         const data = await response.json();
-        displayUsers(data.users);
+        displayUsers(data.users || []);
     } catch (error) {
         console.error('Failed to get users:', error);
+    }
+}
+
+// Update vote count
+async function updateVoteCount() {
+    try {
+        const response = await apiRequest('/api/vote-count');
+        const data = await response.json();
+        
+        if (data.total && data.total > 0) {
+            lastVoteCount = { total: data.total, voted: data.voted || 0 };
+            const voteCountDisplay = document.getElementById('vote-count-display');
+            if (voteCountDisplay) {
+                voteCountDisplay.textContent = `${data.voted}/${data.total} voted`;
+                voteCountDisplay.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to get vote count:', error);
     }
 }
 
 // Display users
 function displayUsers(users) {
     const usersList = document.getElementById('users-list');
+    if (!usersList) return;
+    
     usersList.innerHTML = '';
     
     if (users.length === 0) {
-        usersList.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">No users joined yet</p>';
+        usersList.innerHTML = '<p style="text-align: center; color: var(--text-tertiary); font-style: italic;">No users joined yet</p>';
         return;
     }
     
-    users.forEach(nickname => {
+    users.forEach(user => {
         const badge = document.createElement('div');
-        badge.className = 'user-badge';
-        badge.textContent = nickname;
+        badge.className = user.hasVoted ? 'user-badge user-badge-voted' : 'user-badge';
+        badge.textContent = user.nickname;
+        if (user.hasVoted) {
+            badge.title = 'Has voted';
+        }
         usersList.appendChild(badge);
     });
 }
 
 function displayResults(votes) {
     const resultsList = document.getElementById('results-list');
+    if (!resultsList) return;
+    
     resultsList.innerHTML = '';
     
     if (votes.length === 0) {
-        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
+        resultsList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No votes recorded</p>';
         return;
     }
     
@@ -173,4 +269,3 @@ function displayResults(votes) {
         resultsList.appendChild(item);
     });
 }
-

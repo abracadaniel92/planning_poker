@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">🌙</button>
     <div class="container">
         <div id="join-screen" class="screen">
             <h1>Planning Poker</h1>
@@ -41,6 +42,7 @@
 
             <div id="voting-area" class="voting-area hidden">
                 <div id="vote-display" class="vote-display"></div>
+                <div id="vote-count-display" class="vote-count-display hidden"></div>
                 <div class="cards-container">
                     <button class="card" data-vote="0">0</button>
                     <button class="card" data-vote="1">1</button>
@@ -63,7 +65,9 @@
             </div>
         </div>
     </div>
+    <script src="utils.js"></script>
     <script src="app.js"></script>
+    <script src="theme.js"></script>
 </body>
 </html>
 
