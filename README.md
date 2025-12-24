@@ -29,8 +29,8 @@ A simple, self-hosted Planning Poker application for Scrum teams.
    ```
 
 4. **Access the app:**
-   - Users: `http://localhost:3000`
-   - Host: `http://localhost:3000/host.html` (or `/login.html`)
+   - Main page: `http://localhost:3000`
+   - Both users and host can access from the main page
 
 ## Usage
 
@@ -44,8 +44,10 @@ A simple, self-hosted Planning Poker application for Scrum teams.
 7. See results when voting ends
 
 ### For Host:
-1. Visit `/login.html` and enter password
-2. Use control panel to:
+1. Visit the main page (`http://localhost:3000`)
+2. Scroll to "Host Login" section and enter password
+3. You'll be redirected to the host control panel
+4. Use control panel to:
    - **Start Voting**: Begin a new voting round
    - **End Voting**: Stop voting and show results
    - **Reset**: Clear votes and prepare for next story
