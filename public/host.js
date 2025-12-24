@@ -45,6 +45,24 @@ document.getElementById('reset-btn').addEventListener('click', async () => {
     }
 });
 
+document.getElementById('clear-users-btn').addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to clear all users? This will remove everyone from the session.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/host/clear-users', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            alert('All users cleared successfully');
+            updateUI();
+        }
+    } catch (error) {
+        console.error('Failed to clear users:', error);
+        alert('Failed to clear users. Please try again.');
+    }
+});
+
 // Update UI based on session status
 function updateUI() {
     fetch('/api/host/status')
@@ -81,10 +99,46 @@ function updateUI() {
                 // Display results
                 displayResults(data.votes);
             }
+            
+            // Always show all users if available
+            if (data.allUsers && data.allUsers.length > 0) {
+                displayAllUsers(data.allUsers, status);
+            }
         })
         .catch(error => {
             console.error('Failed to update UI:', error);
         });
+}
+
+// Display all users for host
+function displayAllUsers(users, sessionStatus) {
+    // Create or update users display section
+    let usersSection = document.getElementById('host-users-section');
+    if (!usersSection) {
+        usersSection = document.createElement('div');
+        usersSection.id = 'host-users-section';
+        usersSection.className = 'host-users-section';
+        usersSection.innerHTML = '<h3>All Users (' + users.length + ')</h3><div id="host-users-list" class="users-list"></div>';
+        const controlsSection = document.querySelector('.controls-section');
+        controlsSection.parentNode.insertBefore(usersSection, controlsSection.nextSibling);
+    } else {
+        usersSection.querySelector('h3').textContent = 'All Users (' + users.length + ')';
+    }
+    
+    const usersList = document.getElementById('host-users-list');
+    usersList.innerHTML = '';
+    
+    users.forEach(user => {
+        const badge = document.createElement('div');
+        badge.className = 'user-badge';
+        if (sessionStatus === 'voting' && user.current_vote !== null && user.current_vote !== undefined) {
+            badge.classList.add('user-badge-voted');
+            badge.textContent = user.nickname + ' (voted: ' + user.current_vote + ')';
+        } else {
+            badge.textContent = user.nickname;
+        }
+        usersList.appendChild(badge);
+    });
 }
 
 function displayResults(votes) {

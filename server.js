@@ -205,23 +205,37 @@ app.post('/api/host/reset', (req, res) => {
   });
 });
 
-// API: Get host status (session status + votes if ended)
+// API: Clear all users (host only)
+app.post('/api/host/clear-users', (req, res) => {
+  db.run("DELETE FROM users", (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to clear users' });
+    }
+    res.json({ success: true });
+  });
+});
+
+// API: Get host status (session status + votes if ended, always shows all users)
 app.get('/api/host/status', (req, res) => {
   getCurrentSession((err, session) => {
     if (err || !session) {
       return res.status(500).json({ error: 'Failed to get session' });
     }
 
-    if (session.status === 'ended') {
-      db.all("SELECT nickname, current_vote FROM users WHERE current_vote IS NOT NULL", (err, rows) => {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to get votes' });
-        }
-        res.json({ status: session.status, votes: rows });
-      });
-    } else {
-      res.json({ status: session.status, votes: [] });
-    }
+    // Always get all users for host view
+    db.all("SELECT nickname, current_vote FROM users ORDER BY created_at ASC", (err, users) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to get users' });
+      }
+
+      if (session.status === 'ended') {
+        // Show all users, but only include votes for those who voted
+        const votes = users.filter(u => u.current_vote !== null && u.current_vote !== undefined);
+        res.json({ status: session.status, votes: votes, allUsers: users });
+      } else {
+        res.json({ status: session.status, votes: [], allUsers: users });
+      }
+    });
   });
 });
 
