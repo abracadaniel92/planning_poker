@@ -236,12 +236,30 @@ app.get('/api/host/status', (req, res) => {
         return res.status(500).json({ error: 'Failed to get users' });
       }
 
+      const showVoteStatus = session.status === 'voting';
+      const usersWithStatus = users.map(u => ({
+        nickname: u.nickname,
+        hasVoted: showVoteStatus && (u.current_vote !== null && u.current_vote !== undefined),
+        current_vote: u.current_vote
+      }));
+
       if (session.status === 'ended') {
-        // Show all users, but only include votes for those who voted
-        const votes = users.filter(u => u.current_vote !== null && u.current_vote !== undefined);
-        res.json({ status: session.status, votes: votes, allUsers: users });
+        // Calculate vote distribution for bar chart
+        const voteDistribution = {};
+        users.forEach(u => {
+          if (u.current_vote !== null && u.current_vote !== undefined) {
+            const vote = u.current_vote;
+            voteDistribution[vote] = (voteDistribution[vote] || 0) + 1;
+          }
+        });
+        
+        res.json({ 
+          status: session.status, 
+          voteDistribution: voteDistribution,
+          allUsers: usersWithStatus 
+        });
       } else {
-        res.json({ status: session.status, votes: [], allUsers: users });
+        res.json({ status: session.status, allUsers: usersWithStatus });
       }
     });
   });
