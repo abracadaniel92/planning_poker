@@ -76,17 +76,22 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Clear users first
                 const clearResponse = await fetch('/api/host/clear-users', { method: 'POST' });
+                
+                if (!clearResponse.ok) {
+                    const errorData = await clearResponse.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(errorData.error || 'Failed to clear users');
+                }
+                
                 const clearData = await clearResponse.json();
                 
                 // Logout
                 sessionStorage.removeItem('hostAuthenticated');
-                const clearedCount = clearData.clearedCount || 0;
                 
-                // Redirect immediately
+                // Redirect immediately (don't wait for alert)
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Failed to logout:', error);
-                alert('Failed to logout. Please try again.');
+                alert('Failed to logout: ' + (error.message || 'Please try again.'));
             }
         });
     }
