@@ -8,6 +8,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST_PASSWORD = process.env.HOST_PASSWORD || 'admin123';
 
+// Trust proxy for rate limiting behind reverse proxy (Caddy/Cloudflare)
+app.set('trust proxy', true);
+
 app.use(cors());
 app.use(express.json());
 // Disable caching for HTML/JS/CSS files to prevent cache issues

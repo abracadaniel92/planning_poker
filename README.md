@@ -59,10 +59,70 @@ A simple, self-hosted Planning Poker application for Scrum teams.
 
 ## Self-Hosting
 
-Perfect for self-hosting on your Lenovo ThinkCentre. The app uses SQLite (file-based database) and requires no external services.
+Perfect for self-hosting. The app uses SQLite (file-based database) and requires no external services.
 
-For production, consider:
-- Using PM2 or systemd to keep it running
-- Setting up a reverse proxy (nginx/Caddy) for SSL
-- Using a proper domain/subdomain (e.g., `poker.gmojsoski.com`)
+### Production Deployment with PM2
+
+1. **Install PM2 globally:**
+   ```bash
+   npm install -g pm2
+   ```
+
+2. **Start the app with PM2:**
+   ```bash
+   pm2 start ecosystem.config.js
+   ```
+
+3. **Save PM2 configuration and enable startup:**
+   ```bash
+   pm2 save
+   pm2 startup  # Follow the instructions to enable auto-start on boot
+   ```
+
+4. **Useful PM2 commands:**
+   ```bash
+   pm2 status              # Check app status
+   pm2 logs planning-poker # View logs
+   pm2 restart planning-poker # Restart the app
+   pm2 stop planning-poker    # Stop the app
+   ```
+
+### Reverse Proxy Setup (Caddy/nginx)
+
+When running behind a reverse proxy (Caddy, nginx, etc.), the app automatically trusts the proxy headers. The `trust proxy` setting is already configured in `server.js`.
+
+**Example Caddy configuration:**
+```caddy
+poker.gmojsoski.com {
+    encode gzip
+    reverse_proxy http://localhost:3000 {
+        header_up X-Forwarded-Proto https
+        header_up X-Real-IP {remote_host}
+    }
+}
+```
+
+**Example nginx configuration:**
+```nginx
+server {
+    server_name poker.gmojsoski.com;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Cloudflare Tunnel Setup
+
+If using Cloudflare Tunnel, add this to your tunnel configuration:
+
+```yaml
+- hostname: poker.gmojsoski.com
+  service: http://localhost:3000
+```
 

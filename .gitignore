@@ -3,3 +3,7 @@ poker.db
 .env
 *.log
 
+*.db
+*.db-shm
+*.db-wal
+logs/
