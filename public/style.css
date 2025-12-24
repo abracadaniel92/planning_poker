@@ -236,17 +236,20 @@ h3 {
 /* Cards - Enhanced styling */
 .cards-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 15px;
-    margin-top: 30px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .card {
     aspect-ratio: 1;
     background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-    border: 3px solid #667eea;
-    border-radius: 15px;
-    font-size: 1.8em;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    font-size: 1.4em;
     font-weight: bold;
     color: #667eea;
     cursor: pointer;
@@ -431,55 +434,75 @@ h3 {
     justify-content: center;
 }
 
-/* Vote Distribution Chart */
-.vote-distribution-item {
+/* Vote Distribution Chart - Vertical Stacked Bars */
+.vote-distribution-chart {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
-.vote-distribution-item:last-child {
-    border-bottom: none;
+.vote-distribution-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vote-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .vote-label {
-    min-width: 40px;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.vote-count {
+    font-weight: 600;
+    font-size: 1em;
     color: #667eea;
-    text-align: center;
+    background: #f0f4ff;
+    padding: 4px 10px;
+    border-radius: 12px;
 }
 
 .vote-bar-container {
-    flex: 1;
-    height: 30px;
+    width: 100%;
+    height: 40px;
     background: #f5f5f5;
-    border-radius: 15px;
+    border-radius: 8px;
     overflow: hidden;
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .vote-bar {
     height: 100%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 15px;
+    border-radius: 8px;
     transition: width 0.5s ease;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 10px;
+    justify-content: center;
     color: white;
-    font-weight: 600;
-    font-size: 0.9em;
+    font-weight: 700;
+    font-size: 1em;
+    min-width: 40px;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
 }
 
-.vote-count {
-    min-width: 30px;
-    font-weight: 600;
-    color: #333;
-    text-align: right;
+.vote-bar-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 0.9em;
+    font-style: italic;
 }
 
 /* Mobile Responsive */
@@ -506,13 +529,18 @@ h3 {
     }
 
     .cards-container {
-        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        max-width: 100%;
     }
 
     .card {
-        font-size: 1.4em;
+        font-size: 1.2em;
         border-width: 2px;
+    }
+    
+    .vote-distribution-chart {
+        max-width: 100%;
     }
 
     .btn {
@@ -574,12 +602,22 @@ h3 {
     }
 
     .cards-container {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        max-width: 100%;
     }
 
     .card {
-        font-size: 1.2em;
+        font-size: 1em;
+    }
+    
+    .vote-distribution-chart {
+        max-width: 100%;
+    }
+    
+    .vote-bar {
+        font-size: 0.85em;
+        min-width: 30px;
     }
 
     .btn {

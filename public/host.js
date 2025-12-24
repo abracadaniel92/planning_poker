@@ -165,11 +165,13 @@ function displayVoteDistribution(voteDistribution) {
     });
     
     if (votes.length === 0) {
-        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
+        resultsList.innerHTML = '<div class="vote-distribution-chart"><p style="text-align: center; color: #333; padding: 20px; font-size: 1.1em;">No votes recorded</p></div>';
         return;
     }
     
     const maxCount = Math.max(...Object.values(voteDistribution));
+    const chartContainer = document.createElement('div');
+    chartContainer.className = 'vote-distribution-chart';
     
     votes.forEach(vote => {
         const count = voteDistribution[vote];
@@ -178,14 +180,18 @@ function displayVoteDistribution(voteDistribution) {
         const item = document.createElement('div');
         item.className = 'vote-distribution-item';
         item.innerHTML = `
-            <div class="vote-label">${vote}</div>
-            <div class="vote-bar-container">
-                <div class="vote-bar" style="width: ${percentage}%"></div>
+            <div class="vote-label-row">
+                <span class="vote-label">${vote}</span>
+                <span class="vote-count">${count}</span>
             </div>
-            <div class="vote-count">${count}</div>
+            <div class="vote-bar-container">
+                <div class="vote-bar" style="width: ${percentage}%">${count}</div>
+            </div>
         `;
-        resultsList.appendChild(item);
+        chartContainer.appendChild(item);
     });
+    
+    resultsList.appendChild(chartContainer);
 }
 
 // Display all users for host
