@@ -54,12 +54,34 @@ document.getElementById('clear-users-btn').addEventListener('click', async () =>
         const response = await fetch('/api/host/clear-users', { method: 'POST' });
         const data = await response.json();
         if (data.success) {
-            alert('All users cleared successfully');
+            const count = data.clearedCount || 0;
+            alert(`Successfully cleared ${count} user(s)`);
             updateUI();
         }
     } catch (error) {
         console.error('Failed to clear users:', error);
         alert('Failed to clear users. Please try again.');
+    }
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to logout? This will also clear all users.')) {
+        return;
+    }
+    
+    try {
+        // Clear users first
+        const clearResponse = await fetch('/api/host/clear-users', { method: 'POST' });
+        const clearData = await clearResponse.json();
+        
+        // Logout
+        sessionStorage.removeItem('hostAuthenticated');
+        const clearedCount = clearData.clearedCount || 0;
+        alert(`Logged out successfully. Cleared ${clearedCount} user(s).`);
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Failed to logout:', error);
+        alert('Failed to logout. Please try again.');
     }
 });
 
@@ -96,18 +118,54 @@ function updateUI() {
                 resetBtn.classList.remove('hidden');
                 resultsSection.classList.remove('hidden');
                 
-                // Display results
-                displayResults(data.votes);
+                // Display vote distribution chart instead of individual votes
+                if (data.voteDistribution) {
+                    displayVoteDistribution(data.voteDistribution);
+                }
             }
             
-            // Always show all users if available
-            if (data.allUsers && data.allUsers.length > 0) {
+            // Always show all users
+            if (data.allUsers) {
                 displayAllUsers(data.allUsers, status);
             }
         })
         .catch(error => {
             console.error('Failed to update UI:', error);
         });
+}
+
+function displayVoteDistribution(voteDistribution) {
+    const resultsList = document.getElementById('host-results-list');
+    resultsList.innerHTML = '';
+    
+    const votes = Object.keys(voteDistribution).sort((a, b) => {
+        if (a === '?') return 1;
+        if (b === '?') return -1;
+        return parseInt(a) - parseInt(b);
+    });
+    
+    if (votes.length === 0) {
+        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
+        return;
+    }
+    
+    const maxCount = Math.max(...Object.values(voteDistribution));
+    
+    votes.forEach(vote => {
+        const count = voteDistribution[vote];
+        const percentage = (count / maxCount) * 100;
+        
+        const item = document.createElement('div');
+        item.className = 'vote-distribution-item';
+        item.innerHTML = `
+            <div class="vote-label">${vote}</div>
+            <div class="vote-bar-container">
+                <div class="vote-bar" style="width: ${percentage}%"></div>
+            </div>
+            <div class="vote-count">${count}</div>
+        `;
+        resultsList.appendChild(item);
+    });
 }
 
 // Display all users for host
@@ -118,46 +176,33 @@ function displayAllUsers(users, sessionStatus) {
         usersSection = document.createElement('div');
         usersSection.id = 'host-users-section';
         usersSection.className = 'host-users-section';
-        usersSection.innerHTML = '<h3>All Users (' + users.length + ')</h3><div id="host-users-list" class="users-list"></div>';
+        usersSection.innerHTML = '<h3>All Users (<span id="host-users-count">0</span>)</h3><div id="host-users-list" class="users-list"></div>';
         const controlsSection = document.querySelector('.controls-section');
         controlsSection.parentNode.insertBefore(usersSection, controlsSection.nextSibling);
-    } else {
-        usersSection.querySelector('h3').textContent = 'All Users (' + users.length + ')';
     }
     
     const usersList = document.getElementById('host-users-list');
+    const usersCount = document.getElementById('host-users-count');
+    
+    if (usersCount) {
+        usersCount.textContent = users.length;
+    }
+    
     usersList.innerHTML = '';
     
-    users.forEach(user => {
-        const badge = document.createElement('div');
-        badge.className = 'user-badge';
-        if (sessionStatus === 'voting' && user.current_vote !== null && user.current_vote !== undefined) {
-            badge.classList.add('user-badge-voted');
-            badge.textContent = user.nickname + ' (voted: ' + user.current_vote + ')';
-        } else {
-            badge.textContent = user.nickname;
-        }
-        usersList.appendChild(badge);
-    });
-}
-
-function displayResults(votes) {
-    const resultsList = document.getElementById('host-results-list');
-    resultsList.innerHTML = '';
-    
-    if (votes.length === 0) {
-        resultsList.innerHTML = '<p style="text-align: center; color: #666;">No votes recorded</p>';
+    if (users.length === 0) {
+        usersList.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">No users joined yet</p>';
         return;
     }
     
-    votes.forEach(vote => {
-        const item = document.createElement('div');
-        item.className = 'result-item';
-        item.innerHTML = `
-            <span class="result-nickname">${vote.nickname}</span>
-            <span class="result-vote">${vote.current_vote}</span>
-        `;
-        resultsList.appendChild(item);
+    users.forEach(user => {
+        const badge = document.createElement('div');
+        badge.className = user.hasVoted ? 'user-badge user-badge-voted' : 'user-badge';
+        badge.textContent = user.nickname;
+        if (user.hasVoted) {
+            badge.title = 'Has voted';
+        }
+        usersList.appendChild(badge);
     });
 }
 

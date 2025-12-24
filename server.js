@@ -207,11 +207,19 @@ app.post('/api/host/reset', (req, res) => {
 
 // API: Clear all users (host only)
 app.post('/api/host/clear-users', (req, res) => {
-  db.run("DELETE FROM users", (err) => {
+  db.get("SELECT COUNT(*) as count FROM users", (err, countRow) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to clear users' });
+      return res.status(500).json({ error: 'Failed to count users' });
     }
-    res.json({ success: true });
+    
+    const userCount = countRow.count;
+    
+    db.run("DELETE FROM users", function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to clear users' });
+      }
+      res.json({ success: true, clearedCount: userCount });
+    });
   });
 });
 

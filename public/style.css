@@ -431,6 +431,57 @@ h3 {
     justify-content: center;
 }
 
+/* Vote Distribution Chart */
+.vote-distribution-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.vote-distribution-item:last-child {
+    border-bottom: none;
+}
+
+.vote-label {
+    min-width: 40px;
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #667eea;
+    text-align: center;
+}
+
+.vote-bar-container {
+    flex: 1;
+    height: 30px;
+    background: #f5f5f5;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.vote-bar {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.vote-count {
+    min-width: 30px;
+    font-weight: 600;
+    color: #333;
+    text-align: right;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     body {
